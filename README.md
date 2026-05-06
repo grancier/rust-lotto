@@ -1,57 +1,114 @@
-# Rust Github Template
+# rust-lotto
 
-A template for [cargo generate](https://github.com/cargo-generate/cargo-generate) that aims to be a starting point suitable for
-the vast majority of rust projects that will be hosted on GitHub.
+A small command-line lottery number generator for four games:
 
-See the project [website](https://rust-github.github.io).
+| Game           | Main numbers      | Special ball         |
+| -------------- | ----------------- | -------------------- |
+| NJ Cash 5      | 5 of 1–45         | —                    |
+| NJ Pick-6      | 6 of 1–46         | —                    |
+| Mega Millions  | 5 of 1–70         | Mega Ball, 1–24      |
+| Powerball      | 5 of 1–69         | Powerball, 1–26      |
 
-## Testing the template
+Numbers are drawn without replacement from each pool, so the main numbers in
+a single play are always unique. The Mega Ball and Powerball are drawn from
+their own pools (matching the official lottery machines), so the special ball
+may legally equal one of the main numbers.
 
-The repository itself is not a buildable Cargo project — `template/Cargo.toml`
-contains `{{ ... }}` placeholders that only become valid TOML once
-`cargo-generate` substitutes them. To validate changes to the template, generate
-a project from it and run the same checks CI runs.
+Randomness is sourced from the operating system CSPRNG (`OsRng`), routed
+through `rand`'s rejection-sampling APIs to keep the draw uniform and free of
+modulo bias. A `--seed` flag is available for deterministic test output.
 
-### With `cargo-generate` (preferred)
+## Install
+
+Requires Rust 1.85 or newer.
 
 ```sh
-cargo install cargo-generate
-
-# Generate a binary project from the local checkout.
-cargo generate --path . --name my-bin --bin \
-    -d project-description="test" -d gh-username=octocat
-
-# Generate a library project.
-cargo generate --path . --name my-lib --lib \
-    -d project-description="test" -d gh-username=octocat
+cargo install --path .
 ```
 
-Then inside each generated project run the full CI suite:
+Or run directly from the checkout without installing:
 
 ```sh
-cargo build --all-features --workspace
-cargo test  --all-features --workspace
-cargo fmt   --all --check
+cargo run --release -- <game> [--tickets N] [--seed N]
+```
+
+## Usage
+
+```sh
+rust-lotto <GAME> [-n N] [--seed S]
+```
+
+`<GAME>` is one of:
+
+| Subcommand     | Alias |
+| -------------- | ----- |
+| `cash5`        | `5`   |
+| `pick6`        | `6`   |
+| `megamillions` | `m`   |
+| `powerball`    | `p`   |
+
+Options:
+
+- `-n`, `--tickets <N>` — generate `N` independent plays (default `1`). Each
+  play has its own pool reset, so the same number can appear across tickets.
+- `--seed <S>` — seed the RNG for reproducible output (intended for tests).
+  When omitted, the OS CSPRNG is used.
+
+### Examples
+
+```text
+$ rust-lotto cash5
+03 17 24 31 41
+
+$ rust-lotto pick6 -n 3
+04 11 19 22 38 45
+01 09 14 27 33 40
+05 18 21 25 36 44
+
+$ rust-lotto megamillions
+07 12 33 51 64  18
+
+$ rust-lotto p -n 2
+02 19 28 41 60  07
+11 17 22 39 58  03
+```
+
+Main numbers are zero-padded to two digits and sorted ascending; the special
+ball, when present, is separated by two spaces.
+
+## Library
+
+The crate also exposes a small library:
+
+```rust
+use rand::rngs::OsRng;
+use rand::TryRngCore;
+use rust_lotto::{draw, Game};
+
+let mut rng = OsRng.unwrap_err();
+let ticket = draw(Game::Powerball, &mut rng);
+println!("{ticket}");
+```
+
+See `cargo doc --open` for the full API.
+
+## Development
+
+```sh
+cargo build
+cargo test --all-features --workspace
+cargo fmt --all --check
 cargo clippy --all-targets --all-features --workspace -- -D warnings
-RUSTDOCFLAGS="-D warnings" cargo doc \
-    --no-deps --document-private-items --all-features --workspace
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --document-private-items --all-features --workspace
 ```
 
-### Verifying the declared MSRV
+## License
 
-Generated projects declare `rust-version = "1.85"`. Verify the template still
-builds on that toolchain:
+Licensed under either of
 
-```sh
-rustup toolchain install 1.85.0 --profile minimal
-cargo +1.85.0 check --all-features --workspace
-```
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
+  http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or
+  http://opensource.org/licenses/MIT)
 
-### Without `cargo-generate`
-
-If `cargo-generate` is unavailable, instantiate the template manually by
-copying `template/Cargo.toml` and `template/src/{main,lib}.rs` into a temp
-directory and replacing `{{project-name}}`, `{{project-description}}`, and
-`{{gh-username}}` with concrete values. Then run the commands above. (The
-files under `template/.github/` use Liquid `{% raw %}` blocks and are only
-exercised by GitHub Actions in a generated project.)
+at your option.

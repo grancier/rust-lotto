@@ -32,6 +32,130 @@ Or run directly from the checkout without installing:
 cargo run --release -- <game> [--tickets N] [--seed N]
 ```
 
+## Building from source on Ubuntu / Debian
+
+These instructions assume a fresh Ubuntu 22.04 or 24.04 host (or any
+recent Debian/apt-based system) with no Rust toolchain installed. Run
+them as a regular user; only the `apt` step needs `sudo`.
+
+### 1. Install system build prerequisites
+
+```sh
+sudo apt update
+sudo apt install -y build-essential curl ca-certificates git pkg-config
+```
+
+What each package is for:
+
+- **`build-essential`** — pulls in `gcc`, the C standard library headers, and
+  `make`. Cargo links the final binary with the system C linker, so this is
+  required even though rust-lotto itself is pure Rust.
+- **`curl` + `ca-certificates`** — used by the rustup installer below.
+- **`git`** — to clone the repository.
+- **`pkg-config`** — not strictly needed for rust-lotto's current
+  dependency set, but it is the standard companion to `build-essential` for
+  Rust crates and avoids surprises if you add a dependency that wraps a
+  system library later.
+
+> Note: `apt install rustc cargo` ships an older Rust version on most
+> Ubuntu releases and may be below this crate's MSRV (1.85). Prefer
+> rustup, below.
+
+### 2. Install the Rust toolchain via rustup
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+source "$HOME/.cargo/env"
+```
+
+The first command is the [official rustup
+installer](https://rustup.rs/), invoked non-interactively (`-y`) and
+pinned to the stable channel. It installs `rustup`, `cargo`, `rustc`,
+and friends under `~/.cargo` and `~/.rustup`, and modifies your shell
+profile so they are on `PATH` for new shells. The `source` line makes
+them available in the *current* shell without having to log out and
+back in.
+
+Verify the install:
+
+```sh
+rustc --version   # rustc 1.85.0 or newer
+cargo --version
+```
+
+If `rustc` reports older than 1.85.0, run `rustup update stable`.
+
+### 3. Clone the repository
+
+```sh
+git clone https://github.com/grancier/rust-lotto.git
+cd rust-lotto
+```
+
+### 4. Build
+
+A debug build is the fastest to compile and is fine for trying things
+out:
+
+```sh
+cargo build
+./target/debug/rust-lotto powerball -n 3
+```
+
+A release build is small and fast (the `Cargo.toml` enables thin LTO,
+single codegen unit, and symbol stripping for the release profile):
+
+```sh
+cargo build --release
+./target/release/rust-lotto megamillions -n 3
+```
+
+The first build downloads and compiles roughly 30 transitive crates
+(`clap`, `rand`, `rand_chacha`, and their dependencies) and takes about
+30–60 seconds on a modern laptop. Subsequent builds reuse Cargo's
+incremental cache and complete in under a second.
+
+### 5. Install the binary system-wide for the current user
+
+```sh
+cargo install --path .
+```
+
+This compiles in release mode and copies the resulting binary to
+`~/.cargo/bin/rust-lotto`, which rustup has already added to `PATH`. You
+can then run it from anywhere:
+
+```sh
+rust-lotto cash5 -n 5
+```
+
+### 6. (Optional) Run the test suite
+
+```sh
+cargo test --all-features --workspace
+```
+
+To match the checks CI runs, also:
+
+```sh
+cargo fmt --all --check
+cargo clippy --all-targets --all-features --workspace -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --document-private-items --all-features --workspace
+```
+
+### Troubleshooting
+
+- **`linker 'cc' not found`** — `build-essential` was not installed.
+  Re-run step 1.
+- **`error: package 'rust-lotto' cannot be built because it requires
+  rustc 1.85 or newer`** — your toolchain is older than the project's
+  MSRV. Run `rustup update stable`.
+- **`curl: command not found`** during step 2 — install `curl` from
+  step 1 first.
+- **Cargo hangs on "Updating crates.io index"** behind a corporate
+  proxy — set `HTTPS_PROXY` and `HTTP_PROXY` in the environment, or
+  configure `[http] proxy` in `~/.cargo/config.toml`.
+
 ## Usage
 
 ```sh

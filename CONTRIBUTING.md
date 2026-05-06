@@ -1,32 +1,21 @@
 # Contributing
 
-First off, thank you for considering contributing to Rust GitHub Template.
+Thanks for your interest in contributing to rust-lotto.
 
-If your contribution is not straightforward, please first discuss the change you
-wish to make by creating a new issue before making the change.
-
-One of the project goals is to be easy to understand so, especially for github
-actions, try to keep things simple and to add comments whenever this is not
-possible.
+For non-trivial changes, please open an issue first to discuss the approach
+before sending a pull request.
 
 ## Reporting issues
 
-Before reporting an issue on the
-[issue tracker](https://github.com/rust-github/template/issues),
-please check that it has not already been reported by searching for some related
-keywords.
-
-Try to use a clear title, and describe your problem with complete sentences.
+Before opening an issue, please search the
+[issue tracker](https://github.com/grancier/rust-lotto/issues) for related
+reports. When filing a new issue, use a descriptive title and include enough
+context to reproduce the behavior.
 
 ## Pull requests
 
-Try to do one pull request per change.
-
-## GitHub Actions
-
-When we have to mix GitHub actions variables with the `{{ }}` liquid syntax,
-GitHub actions variables are written in the format
-`{{ "{{ github.variable }}" }}` instead of `{{ github.variable }}`.
-
-See [Continuous delivery](https://github.com/rust-github/template/blob/main/template/.github/workflows/cd.yml)
-as an example.
+- Keep each pull request focused on a single change.
+- Ensure `cargo test`, `cargo fmt --all --check`, and
+  `cargo clippy --all-targets --all-features --workspace -- -D warnings` all
+  pass before requesting review.
+- Add tests for new behavior where it makes sense.

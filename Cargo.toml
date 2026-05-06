@@ -1,16 +1,25 @@
 [package]
-name = "{{project-name}}"
+name = "rust-lotto"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "{{project-description}}"
-repository = "https://github.com/{{gh-username}}/{{project-name}}"
+description = "Lottery number generator for NJ Cash 5, NJ Pick-6, Mega Millions, and Powerball"
+repository = "https://github.com/grancier/rust-lotto"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "rust_lotto"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rust-lotto"
+path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4.5", features = ["derive"] }
+rand = "0.9"
+rand_chacha = "0.9"
 
 [lints.rust]
 unsafe_code = "forbid"
